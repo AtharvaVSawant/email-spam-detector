@@ -1,60 +1,43 @@
 import os
+import sys
 import pandas as pd
-import urllib.request
-from dataclasses import dataclass
+from sklearn.model_selection import train_test_split
 from src.logger import logging
 from src.exception import CustomException
-import sys
-
-
-@dataclass
-class DataIngestionConfig:
-    raw_data_path: str = os.path.join("artifacts", "raw.csv")
-    train_data_path: str = os.path.join("artifacts", "train.csv")
-    test_data_path: str = os.path.join("artifacts", "test.csv")
 
 
 class DataIngestion:
-    def __init__(self):
-        self.config = DataIngestionConfig()
 
-    def initiate_data_ingestion(self, data_path: str = None):
-        """
-        Load SMS Spam Collection dataset.
-        If data_path is None, downloads from UCI repository.
-        """
-        logging.info("Starting data ingestion")
+    def initiate_data_ingestion(self):
         try:
-            os.makedirs(os.path.dirname(self.config.raw_data_path), exist_ok=True)
+            logging.info("Starting data ingestion")
 
-            if data_path and os.path.exists(data_path):
-                df = pd.read_csv(data_path, encoding="latin-1")
-            else:
-                # Use bundled sample or download
-                logging.info("Loading SMS Spam Collection dataset")
-                url = "https://raw.githubusercontent.com/justmarkham/DAT8/master/data/sms.tsv"
-                df = pd.read_csv(url, sep="\t", header=None, names=["label", "message"])
+            data_path = os.path.join("data", "spam.csv")
 
-            # Standardise columns
-            if "v1" in df.columns and "v2" in df.columns:
-                df = df[["v1", "v2"]].rename(columns={"v1": "label", "v2": "message"})
-            elif "label" not in df.columns:
-                df.columns = ["label", "message"] + list(df.columns[2:])
+            if not os.path.exists(data_path):
+                raise FileNotFoundError(f"{data_path} not found")
 
-            df = df[["label", "message"]].dropna()
-            df["label"] = df["label"].map({"ham": 0, "spam": 1})
+            df = pd.read_csv(data_path, encoding="latin-1")
 
-            df.to_csv(self.config.raw_data_path, index=False)
-            logging.info(f"Raw data saved: {self.config.raw_data_path} — {len(df)} rows")
+            df = df.iloc[:, :2]
+            df.columns = ["label", "message"]
 
-            # Train/test split
-            from sklearn.model_selection import train_test_split
-            train_df, test_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df["label"])
-            train_df.to_csv(self.config.train_data_path, index=False)
-            test_df.to_csv(self.config.test_data_path, index=False)
-            logging.info("Train/test split complete")
+            os.makedirs("artifacts", exist_ok=True)
 
-            return self.config.train_data_path, self.config.test_data_path
+            train_df, test_df = train_test_split(
+                df,
+                test_size=0.2,
+                random_state=42,
+                stratify=df["label"]
+            )
+
+            train_path = os.path.join("artifacts", "train.csv")
+            test_path = os.path.join("artifacts", "test.csv")
+
+            train_df.to_csv(train_path, index=False)
+            test_df.to_csv(test_path, index=False)
+
+            return train_path, test_path
 
         except Exception as e:
             raise CustomException(e, sys)
