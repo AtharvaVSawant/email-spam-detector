@@ -1,0 +1,13 @@
+prefix=C:/Projects ML End to End/Email Spam Detector/venv/Library
+exec_prefix=C:/Projects ML End to End/Email Spam Detector/venv/Library
+libdir=C:/Projects ML End to End/Email Spam Detector/venv/Library/lib
+sharedlibdir=C:/Projects ML End to End/Email Spam Detector/venv/Library/lib
+includedir=C:/Projects ML End to End/Email Spam Detector/venv/Library/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.3.1
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}
